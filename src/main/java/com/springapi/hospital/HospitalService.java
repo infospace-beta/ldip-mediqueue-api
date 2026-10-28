@@ -3,6 +3,7 @@ package com.springapi.hospital;
 
 import java.util.List;
 
+import com.springapi.common.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,7 @@ public class HospitalService {
     public Hospital getHospitalById(Long id) {
         return hospitalRepository.findById(id)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Hospital not found with ID: " + id));
+                        new ResourceNotFoundException("Hospital", id));
     }
 
     public Hospital createHospital(Hospital hospital) {
@@ -49,3 +50,4 @@ public class HospitalService {
         hospitalRepository.delete(hospital);
     }
 }
+

@@ -34,21 +34,3 @@ build/
 
 ### Local secrets ###
 .env
-
-# Local configuration and secrets
-.env
-.env.*
-!.env.example
-application.properties.backup
-pom.xml.backup
-
-# Database backups
-*.dump
-*.sql.gz
-
-# Diagnostic logs
-*.log
-startup-error.txt
-
-# Generated build files
-target/

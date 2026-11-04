@@ -1,108 +1,57 @@
-# First-Time Setup
+# MediQueue API setup
 
-Follow these steps after you clone the repository. They take about 10 minutes.
-For how the project is organized and how to add features, see [README.md](README.md).
+## Prerequisites
 
-## 1. Install the prerequisites
+- JDK 21
+- PostgreSQL, either locally or through Docker Compose
 
-- **JDK 25.** Check with `java -version`.
-- **PostgreSQL**, either:
-  - **Docker**, which runs PostgreSQL for you (step 2, option A), or
-  - **a local PostgreSQL install** (step 2, option B).
+## Configure PostgreSQL
 
-## 2. Set up the database
+The application defaults to `jdbc:postgresql://localhost:5432/mediqueue` with
+the `postgres` username and password. To start the included database:
 
-The app needs a PostgreSQL database called `springapi`. Hibernate creates the tables
-automatically the first time the app starts. You only need to create the empty database.
-
-### Option A: Docker
-
-From the project folder, run:
-
-```bash
+```powershell
 docker compose up -d
 ```
 
-This starts PostgreSQL with the database `springapi`, username `postgres` and password `postgres`.
-These match the app's defaults, so **skip step 3** and go straight to step 4.
+For a local PostgreSQL installation, create a database named `mediqueue`.
+If your database credentials or URL differ from the defaults, copy
+`.env.example` to `.env` and set `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`.
 
-To stop it, run `docker compose down`. Add `-v` to also delete the data.
+The API also requires a private `JWT_SECRET` of at least 32 bytes. Set it in
+`.env` or as an environment variable; do not commit real credentials or secrets.
 
-### Option B: Local PostgreSQL install
-
-Open pgAdmin or `psql` and create the database:
-
-```sql
-CREATE DATABASE springapi;
-```
-
-## 3. Tell the app your database password
-
-> **Skip this step if you used Docker.**
-
-By default, the app connects as user `postgres` with password `postgres`.
-If your local PostgreSQL uses a different username or password (it usually does),
-put your settings in a `.env` file in the project folder. The app loads it automatically.
-
-```bash
-cp .env.example .env          # PowerShell: Copy-Item .env.example .env
-```
-
-Then edit `.env`:
-
-| Key           | Default                                       | Set it when                        |
-|---------------|-----------------------------------------------|------------------------------------|
-| `DB_PASSWORD` | `postgres`                                    | Your password is different         |
-| `DB_USERNAME` | `postgres`                                    | You use a different user           |
-| `DB_URL`      | `jdbc:postgresql://localhost:5432/springapi`  | Different host, port or database   |
-
-Write values as `KEY=value`, with no quotes and no spaces around `=`.
-
-`.env` is git-ignored, so your password stays on your machine.
-**Do not put your password in `application.properties`.** That file is committed to Git.
-
-Real environment variables override `.env`. This is handy in CI or for a one-off change:
+## Run the application
 
 ```powershell
-$env:DB_PASSWORD = "your-password"     # PowerShell, current terminal only
+.\mvnw.cmd spring-boot:run
 ```
 
-## 4. Run the app
+Flyway applies the database migrations at startup, and Hibernate validates the
+resulting schema. The API listens on port `8082` by default:
 
-```bash
-./mvnw spring-boot:run        # Windows: .\mvnw.cmd spring-boot:run
+- Swagger UI: <http://localhost:8082/swagger-ui.html>
+- OpenAPI JSON: <http://localhost:8082/v3/api-docs>
+- Health check: <http://localhost:8082/actuator/health>
+
+Authenticate in Swagger with a bearer JWT obtained from
+`POST /api/v1/auth/login`. Patient registration is available at
+`POST /api/v1/auth/register` and `POST /api/v1/patients`.
+
+## Run tests
+
+```powershell
+.\mvnw.cmd test
 ```
 
-You should see `Started Application` in the console. Then open:
-
-- Welcome page, which shows whether the API, the database and the docs are working: http://localhost:8080/
-- Swagger UI, to try every endpoint: http://localhost:8080/swagger-ui.html
-- Health check, which should show `"status":"UP"`: http://localhost:8080/actuator/health
-
-On the first start, a few `WARN ... constraint "uk..." does not exist, skipping` lines are normal.
-That's Hibernate creating the tables.
-
-## 5. Run the tests
-
-```bash
-./mvnw test
-```
-
-> **Important: without Docker, the tests are skipped, not run.**
->
-> `ApplicationTests` starts its own temporary PostgreSQL in Docker (Testcontainers).
-> On a machine without Docker it is **skipped**, and Maven still prints `BUILD SUCCESS`.
-> So a green build without Docker does **not** mean the app was tested.
-> Look for `Skipped: 1` in the output. If you see it, the test did not run.
->
-> To actually run the tests, install Docker Desktop and make sure it's running.
+Controller and unit tests run without Docker. The full application-context test
+uses Testcontainers and is skipped when Docker is unavailable.
 
 ## Troubleshooting
 
-| Problem                                                     | Fix                                                                 |
-|-------------------------------------------------------------|---------------------------------------------------------------------|
-| `password authentication failed for user "postgres"`        | Set `DB_USERNAME` / `DB_PASSWORD` in `.env` (step 3).               |
-| `database "springapi" does not exist`                       | Create the database (step 2).                                       |
-| `Connection to localhost:5432 refused`                      | PostgreSQL isn't running. Start the service, or run `docker compose up -d`. |
-| `Port 8080 was already in use`                              | Stop the other app, or run with `--server.port=8081`: `./mvnw spring-boot:run -Dspring-boot.run.arguments=--server.port=8081` |
-| `release version 25 not supported` / `invalid target release` | Your JDK is older than 25. Install JDK 25 and point `JAVA_HOME` at it. |
+| Problem | Fix |
+|---|---|
+| Database connection refused | Start PostgreSQL or run `docker compose up -d`. |
+| Database does not exist | Create `mediqueue` and confirm `DB_URL` points to it. |
+| Authentication startup error | Set `JWT_SECRET` to a private value of at least 32 bytes. |
+| Port 8082 is already in use | Start with `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--server.port=8083"`. |

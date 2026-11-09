@@ -30,6 +30,10 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     Optional<Department> findByHospitalIdAndId(Long hospitalId, Long id);
 
+    Optional<Department> findByHospitalIdAndCodeIgnoreCase(
+            Long hospitalId,
+            String code);
+
     @Query("select d.hospital.id from Department d where d.id = :departmentId")
     Optional<Long> findHospitalIdById(
             @Param("departmentId") Long departmentId);

@@ -1,8 +1,13 @@
 package com.springapi.user;
 
 public enum UserRole {
+
     PATIENT,
     DOCTOR,
-    STAFF,
-    ADMIN
+    RECEPTIONIST,
+    MEDICAL_STAFF,
+    RESPONDER,
+    HOSPITAL_ADMIN,
+    SYSTEM_ADMIN
+
 }

@@ -17,17 +17,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.springapi.common.dto.PageResponse;
 import com.springapi.user.dto.UserRequest;
 import com.springapi.user.dto.UserResponse;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/users")
 @Tag(name = "Users")
+@SecurityRequirement(name = "bearerAuth")
+@PreAuthorize("hasRole('SYSTEM_ADMIN')")
 public class UserController {
 
 	private final UserService userService;
@@ -37,8 +41,13 @@ public class UserController {
 	}
 
 	@GetMapping
-	public PageResponse<UserResponse> findAll(@ParameterObject @SortDefault("id") Pageable pageable) {
-		return userService.findAll(pageable);
+	public PageResponse<UserResponse> findAll(
+			@RequestParam(required = false) UserRole role,
+			@RequestParam(required = false) Boolean enabled,
+			@RequestParam(required = false) Long hospitalId,
+			@RequestParam(required = false) String search,
+			@ParameterObject @SortDefault("id") Pageable pageable) {
+		return userService.findAll(role, enabled, hospitalId, search, pageable);
 	}
 
 	@GetMapping("/{id}")

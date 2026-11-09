@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.springapi</groupId>
-	<artifactId>spring-boot</artifactId>
+	<artifactId>mediqueue-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>spring-boot</name>
-	<description/>
+	<name>mediqueue-api</name>
+	<description>MediQueue Hospital Queue Management API</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -27,7 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>25</java.version>
+		<java.version>21</java.version>
 		<springdoc.version>3.1.1</springdoc.version>
 	</properties>
 	<dependencies>
@@ -37,11 +37,35 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
-		<!-- Security: authentication and password hashing -->
+		<!-- Authentication and authorization -->
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-security</artifactId>
 </dependency>
+
+<!-- JWT API -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-api</artifactId>
+    <version>0.13.0</version>
+</dependency>
+
+<!-- JWT implementation -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-impl</artifactId>
+    <version>0.13.0</version>
+    <scope>runtime</scope>
+</dependency>
+
+<!-- JWT JSON serialization -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-jackson</artifactId>
+    <version>0.13.0</version>
+    <scope>runtime</scope>
+</dependency>
+
 
 		<!-- Bean Validation: @NotBlank, @Email, @Size ... on request DTOs -->
 		<dependency>
@@ -74,7 +98,17 @@
 			<version>${springdoc.version}</version>
 		</dependency>
 
-		<!-- Testing -->
+		                <!-- Database migrations -->
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-flyway</artifactId>
+                </dependency>
+
+                <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-database-postgresql</artifactId>
+                </dependency>
+<!-- Testing -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
@@ -110,3 +144,6 @@
 	</build>
 
 </project>
+
+
+

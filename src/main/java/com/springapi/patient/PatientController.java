@@ -1,8 +1,6 @@
 package com.springapi.patient;
 
 import java.net.URI;
-import java.util.List;
-
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

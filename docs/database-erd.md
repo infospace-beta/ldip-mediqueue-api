@@ -1,10 +1,7 @@
+
 # MediQueue database ER diagram
 
-The diagram reflects the PostgreSQL schema created by Flyway migrations
-V1–V11. MediQueue models patients, doctors, staff, responders, and
-administrators as rows in `users`; the `role` column distinguishes account
-types. Queue tickets are the visit/history records returned by the API. There
-is no separate `patients`, `visits`, or `roles` table.
+The diagram reflects the PostgreSQL schema created by Flyway migrations V1 to V11. MediQueue models patients, doctors, staff, responders, and administrators as rows in `users`; the `role` column distinguishes account types. Queue tickets are the visit/history records returned by the API. There is no separate `patients`, `visits`, or `roles` table.
 
 ```mermaid
 erDiagram
@@ -12,6 +9,7 @@ erDiagram
     HOSPITALS o|--o{ USERS : assigns
     USERS ||--o{ QUEUE_TICKETS : patient
     DEPARTMENTS ||--o{ QUEUE_TICKETS : queues
+
     USERS ||--o{ APPOINTMENTS : patient
     USERS ||--o{ APPOINTMENTS : doctor
     DEPARTMENTS ||--o{ APPOINTMENTS : schedules
@@ -19,6 +17,7 @@ erDiagram
     USERS ||--o{ CLINICAL_RECORDS : patient
     USERS ||--o{ CLINICAL_RECORDS : authors
     USERS ||--o{ NOTIFICATIONS : receives
+
     HOSPITALS ||--o{ EMERGENCY_CASES : receives
     USERS o|--o{ EMERGENCY_CASES : patient
     USERS ||--o{ EMERGENCY_CASES : reports
@@ -124,5 +123,4 @@ erDiagram
     }
 ```
 
-`AUTHORS`, `BOOKS`, and `BOOKMARKS` are retained from the repository's original
-library starter schema. The MediQueue API does not currently use them.
+`AUTHORS`, `BOOKS`, and `BOOKMARKS` are retained from the repository's original library starter schema. The MediQueue API does not currently use them.

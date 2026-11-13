@@ -14,10 +14,15 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     List<Department> findAllByHospitalId(Long hospitalId);
 
+    Page<Department> findByHospitalIdAndStatus(
+            Long hospitalId,
+            DepartmentStatus status,
+            Pageable pageable);
+
     @Query("""
             select d from Department d
             where d.hospital.id = :hospitalId
-              and (:search is null
+              and (:search = ''
                    or lower(d.name) like lower(concat('%', :search, '%'))
                    or lower(d.code) like lower(concat('%', :search, '%')))
               and (:status is null or d.status = :status)

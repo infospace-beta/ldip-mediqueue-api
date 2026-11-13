@@ -169,11 +169,38 @@ not production capacity guarantees.
 
 ## Frontend/API integration
 
-This repository contains the backend API, not the frontend application, and
-does not contain a separate API handshake document. Use the live OpenAPI
-definition at `/v3/api-docs` as the current backend contract. Frontend
-integration and comparison with the agreed handshake require the frontend
-repository and the team's handshake document.
+The MediQueue Vue frontend is in the sibling `ldip-mediqueue-app\frontend`
+directory. It uses `VITE_API_URL` (default `http://localhost:8082`) and the
+backend must allow the frontend's origin through
+`APP_CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`). For a different
+Vite host/port, set the backend property to the matching origin or a
+comma-separated list of trusted origins.
+
+Run the frontend from its directory:
+
+```powershell
+Copy-Item .env.example .env
+npm run dev
+```
+
+The API contract is the backend OpenAPI document at `/v3/api-docs`. The
+frontend connects patient registration/login and current-user lookup, active
+hospital/department and on-duty doctor directories, queue operations,
+emergency requests/status, appointment booking, patient clinical history,
+in-app notifications, and the staff, responder, doctor, and hospital
+dashboards.
+
+Flyway V11 adds appointment, clinical-record, and notification tables.
+Patients can book a future UTC start time with an on-duty doctor and active
+department at the same hospital; duplicate bookings for the same doctor and
+exact start time are rejected. Appointments are fixed time slots, and this
+version does not model appointment duration or detect overlapping slots.
+Doctors and medical staff can add one clinical record to each completed queue
+ticket; patients can read their own records. Queue responses include a
+one-based position while waiting and an estimated wait based on the
+department's historical average wait. Notifications are in-app only, are
+created for queue, appointment, emergency, and clinical events, and can be
+marked read by their recipient. No SMS or email delivery is configured.
 
 ## Troubleshooting
 

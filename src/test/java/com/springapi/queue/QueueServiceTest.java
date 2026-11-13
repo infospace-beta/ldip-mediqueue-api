@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.time.Instant;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import com.springapi.common.exception.ConflictException;
 import com.springapi.department.Department;
 import com.springapi.department.DepartmentRepository;
 import com.springapi.department.DepartmentStatus;
+import com.springapi.notification.NotificationService;
 import com.springapi.user.User;
 import com.springapi.user.UserRepository;
 import com.springapi.user.UserRole;
@@ -26,6 +28,7 @@ class QueueServiceTest {
     private QueueTicketRepository queueTicketRepository;
     private DepartmentRepository departmentRepository;
     private UserRepository userRepository;
+    private NotificationService notificationService;
     private QueueService queueService;
 
     @BeforeEach
@@ -33,8 +36,12 @@ class QueueServiceTest {
         queueTicketRepository = mock(QueueTicketRepository.class);
         departmentRepository = mock(DepartmentRepository.class);
         userRepository = mock(UserRepository.class);
+        notificationService = mock(NotificationService.class);
         queueService = new QueueService(
-                queueTicketRepository, departmentRepository, userRepository);
+                queueTicketRepository,
+                departmentRepository,
+                userRepository,
+                notificationService);
     }
 
     @Test
@@ -108,6 +115,30 @@ class QueueServiceTest {
                 () -> queueService.completeTicket(4L, 12L));
 
         verify(queueTicketRepository, never()).save(any(QueueTicket.class));
+    }
+
+    @Test
+    void estimatesWaitUsingOneBasedQueuePosition() {
+        Instant joinedAt = Instant.parse("2026-11-04T07:00:00Z");
+        QueueTicket ticket = mock(QueueTicket.class);
+        Department department = activeDepartment();
+        User patient = patient();
+        when(ticket.getPatient()).thenReturn(patient);
+        when(ticket.getDepartment()).thenReturn(department);
+        when(ticket.getId()).thenReturn(12L);
+        when(ticket.getStatus()).thenReturn(QueueStatus.WAITING);
+        when(ticket.getCreatedAt()).thenReturn(joinedAt);
+        when(queueTicketRepository.findById(12L))
+                .thenReturn(Optional.of(ticket));
+        when(queueTicketRepository.countWaitingAhead(4L, joinedAt, 12L))
+                .thenReturn(1L);
+        when(queueTicketRepository.findAverageWaitMinutesByDepartmentId(4L))
+                .thenReturn(10.4);
+
+        QueueTicketResponse response = queueService.getTicket(12L);
+
+        assertEquals(2L, response.position());
+        assertEquals(21L, response.estimatedWaitMinutes());
     }
 
     private User patient() {

@@ -40,9 +40,21 @@ public class DepartmentService {
         }
 
         String normalizedSearch = search == null || search.isBlank()
-                ? null : search.trim();
+                ? "" : search.trim();
         return departmentRepository.findFiltered(
                 hospitalId, normalizedSearch, status, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Department> getDepartmentsByHospitalAndStatus(
+            Long hospitalId,
+            DepartmentStatus status,
+            Pageable pageable) {
+        if (!hospitalRepository.existsById(hospitalId)) {
+            throw new ResourceNotFoundException("Hospital", hospitalId);
+        }
+        return departmentRepository.findByHospitalIdAndStatus(
+                hospitalId, status, pageable);
     }
 
     @Transactional(readOnly = true)

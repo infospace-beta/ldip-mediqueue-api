@@ -3,16 +3,20 @@ package com.springapi.emergency;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import com.springapi.user.User;
 import com.springapi.user.UserRepository;
+import com.springapi.user.UserRole;
 
 class EmergencyAuthorizationTest {
 
@@ -36,6 +40,27 @@ class EmergencyAuthorizationTest {
 
         assertTrue(authorization.canAccessCase(authentication, 2L, 5L));
         assertFalse(authorization.canAccessCase(authentication, 2L, 6L));
+    }
+
+    @Test
+    void patientCanReadOnlyTheirOwnEmergencyCaseList() {
+        User patient = mock(User.class);
+        when(patient.getId()).thenReturn(9L);
+        when(patient.getRole()).thenReturn(UserRole.PATIENT);
+        when(userRepository.findByUsername("patient"))
+                .thenReturn(Optional.of(patient));
+        var authentication = authentication("patient", "PATIENT");
+
+        assertTrue(authorization.canReadPatientCases(authentication, 9L));
+        assertFalse(authorization.canReadPatientCases(authentication, 10L));
+    }
+
+    @Test
+    void hospitalStaffCannotReadPatientEmergencyCaseList() {
+        var authentication = authentication("staff", "MEDICAL_STAFF");
+
+        assertFalse(authorization.canReadPatientCases(authentication, 9L));
+        verifyNoInteractions(userRepository);
     }
 
     @Test

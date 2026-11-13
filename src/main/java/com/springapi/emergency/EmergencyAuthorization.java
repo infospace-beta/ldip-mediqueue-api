@@ -4,6 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import com.springapi.user.UserRepository;
+import com.springapi.user.UserRole;
 
 @Component("emergencyAuthorization")
 public class EmergencyAuthorization {
@@ -55,6 +56,25 @@ public class EmergencyAuthorization {
                 && hasRole(authentication, "PATIENT")
                 && emergencyCaseRepository.existsReportedBy(
                         hospitalId, caseId, authentication.getName());
+    }
+
+    public boolean canReadPatientCases(
+            Authentication authentication,
+            Long patientId) {
+        if (!isAuthenticated(authentication) || patientId == null) {
+            return false;
+        }
+        if (hasRole(authentication, "SYSTEM_ADMIN")) {
+            return userRepository.findByIdAndRole(patientId, UserRole.PATIENT)
+                    .isPresent();
+        }
+        if (!hasRole(authentication, "PATIENT")) {
+            return false;
+        }
+        return userRepository.findByUsername(authentication.getName())
+                .filter(user -> user.getRole() == UserRole.PATIENT)
+                .map(user -> patientId.equals(user.getId()))
+                .orElse(false);
     }
 
     public boolean canManageCase(

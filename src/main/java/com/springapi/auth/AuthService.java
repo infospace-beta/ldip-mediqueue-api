@@ -13,9 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.springapi.auth.dto.AuthResponse;
+import com.springapi.auth.dto.CurrentUserResponse;
 import com.springapi.auth.dto.LoginRequest;
 import com.springapi.auth.dto.RegisterRequest;
 import com.springapi.common.exception.ConflictException;
+import com.springapi.common.exception.ResourceNotFoundException;
 import com.springapi.security.JwtService;
 import com.springapi.user.User;
 import com.springapi.user.UserRepository;
@@ -94,5 +96,13 @@ public class AuthService {
                 "Bearer",
                 accessTokenExpirationMs / 1000
         );
+    }
+
+    @Transactional(readOnly = true)
+    public CurrentUserResponse getCurrentUser(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User", username));
+        return CurrentUserResponse.from(user);
     }
 }

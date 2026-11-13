@@ -26,6 +26,25 @@ public interface EmergencyCaseRepository
             @Param("severity") EmergencySeverity severity,
             Pageable pageable);
 
+    @Query("""
+            select c from EmergencyCase c
+            where c.patient.id = :patientId
+            order by c.createdAt desc
+            """)
+    Page<EmergencyCase> findForPatient(
+            @Param("patientId") Long patientId,
+            Pageable pageable);
+
+    @Query("""
+            select c from EmergencyCase c
+            where c.assignedResponder.username = :username
+              and c.status in :statuses
+            order by c.createdAt desc
+            """)
+    Page<EmergencyCase> findAssignedToResponder(
+            @Param("username") String username,
+            @Param("statuses") Collection<EmergencyStatus> statuses,
+            Pageable pageable);
     Optional<EmergencyCase> findByHospitalIdAndId(Long hospitalId, Long id);
 
     @Query("""

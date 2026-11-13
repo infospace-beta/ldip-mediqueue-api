@@ -23,6 +23,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.springapi.auth.dto.RegisterRequest;
 import com.springapi.common.dto.PageResponse;
+import com.springapi.emergency.EmergencyService;
+import com.springapi.emergency.dto.EmergencyResponse;
 import com.springapi.patient.dto.PatientResponse;
 import com.springapi.patient.dto.PatientUpdateRequest;
 import com.springapi.queue.QueueService;
@@ -40,12 +42,15 @@ public class PatientController {
 
     private final PatientService patientService;
     private final QueueService queueService;
+    private final EmergencyService emergencyService;
 
     public PatientController(
             PatientService patientService,
-            QueueService queueService) {
+            QueueService queueService,
+            EmergencyService emergencyService) {
         this.patientService = patientService;
         this.queueService = queueService;
+        this.emergencyService = emergencyService;
     }
 
     @GetMapping
@@ -74,6 +79,17 @@ public class PatientController {
                     sort = "createdAt",
                     direction = Sort.Direction.DESC) Pageable pageable) {
         return queueService.getPatientHistory(id, status, pageable);
+    }
+
+    @GetMapping("/{id}/emergency-cases")
+    @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("@emergencyAuthorization.canReadPatientCases(authentication, #p0)")
+    public PageResponse<EmergencyResponse> getPatientEmergencyCases(
+            @PathVariable Long id,
+            @ParameterObject @SortDefault(
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC) Pageable pageable) {
+        return emergencyService.getForPatient(id, pageable);
     }
 
     @PostMapping

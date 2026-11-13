@@ -2,6 +2,7 @@
 package com.springapi.auth;
 
 import com.springapi.auth.dto.AuthResponse;
+import com.springapi.auth.dto.CurrentUserResponse;
 import com.springapi.auth.dto.LoginRequest;
 import com.springapi.auth.dto.RegisterRequest;
 
@@ -9,6 +10,9 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,5 +46,11 @@ public class AuthController {
         AuthResponse response = authService.login(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public CurrentUserResponse getCurrentUser(
+            @AuthenticationPrincipal UserDetails currentUser) {
+        return authService.getCurrentUser(currentUser.getUsername());
     }
 }

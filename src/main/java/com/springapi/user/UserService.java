@@ -78,6 +78,16 @@ public class UserService {
 				.map(UserResponse::from));
 	}
 
+	@Transactional(readOnly = true)
+	public PageResponse<UserResponse> findAvailableDoctors(
+			Long hospitalId,
+			Pageable pageable) {
+		return PageResponse.from(userRepository
+				.findAllByHospitalIdAndRoleAndEnabledTrueAndOnDutyTrue(
+						hospitalId, UserRole.DOCTOR, pageable)
+				.map(UserResponse::from));
+	}
+
 	public UserResponse findDoctor(Long hospitalId, Long doctorId) {
 		return userRepository.findByIdAndHospitalIdAndRole(
 						doctorId, hospitalId, UserRole.DOCTOR)
@@ -293,7 +303,7 @@ public class UserService {
 	}
 
 	private String normalizeSearch(String search) {
-		return search == null || search.isBlank() ? null : search.trim();
+		return search == null || search.isBlank() ? "" : search.trim();
 	}
 
 	private void validatePassword(String password) {

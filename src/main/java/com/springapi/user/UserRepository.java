@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 			where (:role is null or u.role = :role)
 			  and (:enabled is null or u.enabled = :enabled)
 			  and (:hospitalId is null or u.hospital.id = :hospitalId)
-			  and (:search is null
+			  and (:search = ''
 			       or lower(u.username) like lower(concat('%', :search, '%'))
 			       or lower(u.email) like lower(concat('%', :search, '%'))
 			       or lower(u.fullName) like lower(concat('%', :search, '%')))
@@ -44,7 +44,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	@Query("""
 			select u from User u
 			where u.role = com.springapi.user.UserRole.PATIENT
-			  and (:search is null
+			  and (:search = ''
 			       or lower(u.username) like lower(concat('%', :search, '%'))
 			       or lower(u.email) like lower(concat('%', :search, '%'))
 			       or lower(u.fullName) like lower(concat('%', :search, '%')))
@@ -54,6 +54,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 			Pageable pageable);
 
 	Page<User> findAllByHospitalIdAndRole(
+			Long hospitalId,
+			UserRole role,
+			Pageable pageable);
+
+	Page<User> findAllByHospitalIdAndRoleAndEnabledTrueAndOnDutyTrue(
 			Long hospitalId,
 			UserRole role,
 			Pageable pageable);

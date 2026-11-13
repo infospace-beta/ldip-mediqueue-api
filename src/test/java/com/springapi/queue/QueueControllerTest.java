@@ -128,7 +128,8 @@ class QueueControllerTest {
     private QueueTicketResponse ticket(QueueStatus status) {
         return new QueueTicketResponse(
                 12L, 7L, 4L, "Emergency", status,
-                Instant.parse("2026-11-04T07:00:00Z"), null, null);
+                Instant.parse("2026-11-04T07:00:00Z"), null, null,
+                null, null);
     }
 
     private static class PatientPrincipalResolver

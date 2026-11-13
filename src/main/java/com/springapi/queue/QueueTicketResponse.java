@@ -10,9 +10,14 @@ public record QueueTicketResponse(
         QueueStatus status,
         Instant joinedAt,
         Instant calledAt,
-        Instant completedAt) {
+        Instant completedAt,
+        Long position,
+        Long estimatedWaitMinutes) {
 
-    public static QueueTicketResponse from(QueueTicket ticket) {
+    public static QueueTicketResponse from(
+            QueueTicket ticket,
+            Long position,
+            Long estimatedWaitMinutes) {
         return new QueueTicketResponse(
                 ticket.getId(),
                 ticket.getPatient().getId(),
@@ -21,6 +26,8 @@ public record QueueTicketResponse(
                 ticket.getStatus(),
                 ticket.getCreatedAt(),
                 ticket.getCalledAt(),
-                ticket.getCompletedAt());
+                ticket.getCompletedAt(),
+                position,
+                estimatedWaitMinutes);
     }
 }

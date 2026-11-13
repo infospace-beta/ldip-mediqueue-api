@@ -4,6 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +45,12 @@ class DashboardControllerTest {
                 .thenReturn(new HospitalDashboardResponse(2L, 3, 5.0, 1, 2));
 
         mockMvc.perform(get("/api/v1/dashboards/hospitals/2"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hospitalId").value(2))
+                .andExpect(jsonPath("$.waitingTickets").value(3))
+                .andExpect(jsonPath("$.averageWaitMinutes").value(5.0))
+                .andExpect(jsonPath("$.openEmergencyCases").value(1))
+                .andExpect(jsonPath("$.onDutyDoctors").value(2));
 
         verify(dashboardService).getHospitalDashboard(2L);
     }
@@ -55,7 +61,11 @@ class DashboardControllerTest {
                 .thenReturn(new DoctorDashboardResponse(2L, true, 3, 1));
 
         mockMvc.perform(get("/api/v1/dashboards/doctor"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hospitalId").value(2))
+                .andExpect(jsonPath("$.onDuty").value(true))
+                .andExpect(jsonPath("$.waitingTickets").value(3))
+                .andExpect(jsonPath("$.openEmergencyCases").value(1));
 
         verify(dashboardService).getDoctorDashboard("dashboard-user");
     }
@@ -66,7 +76,11 @@ class DashboardControllerTest {
                 .thenReturn(new StaffDashboardResponse(2L, 3, 1, 2));
 
         mockMvc.perform(get("/api/v1/dashboards/staff"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hospitalId").value(2))
+                .andExpect(jsonPath("$.waitingTickets").value(3))
+                .andExpect(jsonPath("$.openEmergencyCases").value(1))
+                .andExpect(jsonPath("$.onDutyDoctors").value(2));
 
         verify(dashboardService).getStaffDashboard("dashboard-user");
     }
@@ -77,7 +91,10 @@ class DashboardControllerTest {
                 .thenReturn(new ResponderDashboardResponse(2L, 1, 1));
 
         mockMvc.perform(get("/api/v1/dashboards/responder"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hospitalId").value(2))
+                .andExpect(jsonPath("$.assignedCases").value(1))
+                .andExpect(jsonPath("$.respondingCases").value(1));
 
         verify(dashboardService).getResponderDashboard("dashboard-user");
     }

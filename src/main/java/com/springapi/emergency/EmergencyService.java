@@ -1,6 +1,7 @@
 package com.springapi.emergency;
 
 import java.time.Instant;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,8 @@ import com.springapi.emergency.dto.EmergencyResponse;
 import com.springapi.hospital.Hospital;
 import com.springapi.hospital.HospitalRepository;
 import com.springapi.hospital.HospitalStatus;
+import com.springapi.notification.NotificationKind;
+import com.springapi.notification.NotificationService;
 import com.springapi.user.User;
 import com.springapi.user.UserRepository;
 import com.springapi.user.UserRole;
@@ -25,14 +28,17 @@ public class EmergencyService {
     private final EmergencyCaseRepository emergencyCaseRepository;
     private final HospitalRepository hospitalRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public EmergencyService(
             EmergencyCaseRepository emergencyCaseRepository,
             HospitalRepository hospitalRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            NotificationService notificationService) {
         this.emergencyCaseRepository = emergencyCaseRepository;
         this.hospitalRepository = hospitalRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -46,6 +52,33 @@ public class EmergencyService {
         }
         Page<EmergencyCase> cases = emergencyCaseRepository.findFiltered(
                 hospitalId, status, severity, pageable);
+        return PageResponse.from(cases.map(EmergencyResponse::from));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<EmergencyResponse> getForPatient(
+            Long patientId,
+            Pageable pageable) {
+        if (userRepository.findByIdAndRole(patientId, UserRole.PATIENT).isEmpty()) {
+            throw new ResourceNotFoundException("Patient", patientId);
+        }
+        return PageResponse.from(emergencyCaseRepository
+                .findForPatient(patientId, pageable)
+                .map(EmergencyResponse::from));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<EmergencyResponse> getAssignedToResponder(
+            String username,
+            Pageable pageable) {
+        Page<EmergencyCase> cases = emergencyCaseRepository
+                .findAssignedToResponder(
+                        username,
+                        List.of(
+                                EmergencyStatus.ASSIGNED,
+                                EmergencyStatus.RESPONDING),
+                        pageable);
+
         return PageResponse.from(cases.map(EmergencyResponse::from));
     }
 
@@ -75,8 +108,13 @@ public class EmergencyService {
         emergencyCase.setPatient(resolvePatient(request.patientId()));
         applyRequest(emergencyCase, request);
         emergencyCase.setStatus(EmergencyStatus.REPORTED);
-        return EmergencyResponse.from(
-                emergencyCaseRepository.save(emergencyCase));
+        EmergencyCase saved = emergencyCaseRepository.save(emergencyCase);
+        notifyReporterAndPatient(
+                saved,
+                "Emergency request received",
+                "Emergency request #%d was received by %s."
+                        .formatted(saved.getId(), hospital.getName()));
+        return EmergencyResponse.from(saved);
     }
 
     public EmergencyResponse update(
@@ -111,8 +149,19 @@ public class EmergencyService {
                         "Responder assigned to this hospital", responderId));
         emergencyCase.setAssignedResponder(responder);
         emergencyCase.setStatus(EmergencyStatus.ASSIGNED);
-        return EmergencyResponse.from(
-                emergencyCaseRepository.save(emergencyCase));
+        EmergencyCase saved = emergencyCaseRepository.save(emergencyCase);
+        notificationService.create(
+                responder,
+                NotificationKind.EMERGENCY,
+                "Emergency assigned",
+                "Emergency case #%d has been assigned to you."
+                        .formatted(saved.getId()));
+        notifyPatient(
+                saved,
+                "Responder assigned",
+                "A responder has been assigned to emergency case #%d."
+                        .formatted(saved.getId()));
+        return EmergencyResponse.from(saved);
     }
 
     public EmergencyResponse updateStatus(
@@ -126,8 +175,13 @@ public class EmergencyService {
                     "Only an assigned case can move to RESPONDING.");
         }
         emergencyCase.setStatus(status);
-        return EmergencyResponse.from(
-                emergencyCaseRepository.save(emergencyCase));
+        EmergencyCase saved = emergencyCaseRepository.save(emergencyCase);
+        notifyPatient(
+                saved,
+                "Emergency response started",
+                "A responder is attending emergency case #%d."
+                        .formatted(saved.getId()));
+        return EmergencyResponse.from(saved);
     }
 
     public EmergencyResponse resolve(Long hospitalId, Long caseId) {
@@ -139,8 +193,42 @@ public class EmergencyService {
         }
         emergencyCase.setStatus(EmergencyStatus.RESOLVED);
         emergencyCase.setResolvedAt(Instant.now());
-        return EmergencyResponse.from(
-                emergencyCaseRepository.save(emergencyCase));
+        EmergencyCase saved = emergencyCaseRepository.save(emergencyCase);
+        notifyReporterAndPatient(
+                saved,
+                "Emergency case resolved",
+                "Emergency case #%d has been resolved."
+                        .formatted(saved.getId()));
+        return EmergencyResponse.from(saved);
+    }
+
+    private void notifyReporterAndPatient(
+            EmergencyCase emergencyCase,
+            String title,
+            String message) {
+        notifyPatient(emergencyCase, title, message);
+        if (emergencyCase.getPatient() == null
+                || !emergencyCase.getPatient().getId()
+                        .equals(emergencyCase.getReportedBy().getId())) {
+            notificationService.create(
+                    emergencyCase.getReportedBy(),
+                    NotificationKind.EMERGENCY,
+                    title,
+                    message);
+        }
+    }
+
+    private void notifyPatient(
+            EmergencyCase emergencyCase,
+            String title,
+            String message) {
+        if (emergencyCase.getPatient() != null) {
+            notificationService.create(
+                    emergencyCase.getPatient(),
+                    NotificationKind.EMERGENCY,
+                    title,
+                    message);
+        }
     }
 
     private EmergencyCase getCase(Long hospitalId, Long caseId) {

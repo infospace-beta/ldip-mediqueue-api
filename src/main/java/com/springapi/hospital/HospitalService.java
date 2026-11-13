@@ -30,9 +30,16 @@ public class HospitalService {
             HospitalStatus status,
             Pageable pageable) {
         String normalizedSearch = search == null || search.isBlank()
-                ? null : search.trim();
+                ? "" : search.trim();
         return hospitalRepository.findFiltered(
                 normalizedSearch, status, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Hospital> getHospitalsByStatus(
+            HospitalStatus status,
+            Pageable pageable) {
+        return hospitalRepository.findByStatus(status, pageable);
     }
 
     @Transactional(readOnly = true)

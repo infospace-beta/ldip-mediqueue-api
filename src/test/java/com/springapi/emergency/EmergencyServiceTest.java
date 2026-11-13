@@ -3,6 +3,7 @@ package com.springapi.emergency;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import com.springapi.common.exception.ConflictException;
 import com.springapi.emergency.dto.EmergencyRequest;
@@ -19,6 +22,7 @@ import com.springapi.emergency.dto.EmergencyResponse;
 import com.springapi.hospital.Hospital;
 import com.springapi.hospital.HospitalRepository;
 import com.springapi.hospital.HospitalStatus;
+import com.springapi.notification.NotificationService;
 import com.springapi.user.User;
 import com.springapi.user.UserRepository;
 import com.springapi.user.UserRole;
@@ -35,8 +39,12 @@ class EmergencyServiceTest {
         emergencyCaseRepository = mock(EmergencyCaseRepository.class);
         hospitalRepository = mock(HospitalRepository.class);
         userRepository = mock(UserRepository.class);
+        NotificationService notificationService = mock(NotificationService.class);
         emergencyService = new EmergencyService(
-                emergencyCaseRepository, hospitalRepository, userRepository);
+                emergencyCaseRepository,
+                hospitalRepository,
+                userRepository,
+                notificationService);
     }
 
     @Test
@@ -64,6 +72,21 @@ class EmergencyServiceTest {
         assertEquals(3L, response.reportedById());
         assertEquals(EmergencyStatus.REPORTED, response.status());
         verify(emergencyCaseRepository).save(any(EmergencyCase.class));
+    }
+
+    @Test
+    void returnsEmergencyCasesForPatient() {
+        when(userRepository.findByIdAndRole(9L, UserRole.PATIENT))
+                .thenReturn(Optional.of(mock(User.class)));
+        when(emergencyCaseRepository.findForPatient(
+                eq(9L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(java.util.List.of()));
+
+        var response = emergencyService.getForPatient(9L, Pageable.unpaged());
+
+        assertEquals(0, response.content().size());
+        verify(emergencyCaseRepository).findForPatient(
+                eq(9L), any(Pageable.class));
     }
 
     @Test

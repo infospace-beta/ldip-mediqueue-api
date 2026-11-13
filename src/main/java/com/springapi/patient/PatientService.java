@@ -33,7 +33,7 @@ public class PatientService {
             String search,
             Pageable pageable) {
         String normalizedSearch = search == null || search.isBlank()
-                ? null : search.trim();
+                ? "" : search.trim();
         return PageResponse.from(userRepository
                 .findPatients(normalizedSearch, pageable)
                 .map(PatientResponse::from));

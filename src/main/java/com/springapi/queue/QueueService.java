@@ -13,6 +13,8 @@ import com.springapi.common.dto.PageResponse;
 import com.springapi.department.Department;
 import com.springapi.department.DepartmentRepository;
 import com.springapi.department.DepartmentStatus;
+import com.springapi.notification.NotificationKind;
+import com.springapi.notification.NotificationService;
 import com.springapi.user.User;
 import com.springapi.user.UserRepository;
 import com.springapi.user.UserRole;
@@ -27,14 +29,17 @@ public class QueueService {
     private final QueueTicketRepository queueTicketRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public QueueService(
             QueueTicketRepository queueTicketRepository,
             DepartmentRepository departmentRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            NotificationService notificationService) {
         this.queueTicketRepository = queueTicketRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     public QueueTicketResponse joinQueue(Long departmentId, String username) {
@@ -54,7 +59,14 @@ public class QueueService {
         ticket.setPatient(patient);
         ticket.setDepartment(department);
         ticket.setStatus(QueueStatus.WAITING);
-        return QueueTicketResponse.from(queueTicketRepository.save(ticket));
+        QueueTicket saved = queueTicketRepository.save(ticket);
+        notificationService.create(
+                patient,
+                NotificationKind.QUEUE,
+                "Queue ticket created",
+                "Your ticket #%d has been added to the %s queue."
+                        .formatted(saved.getId(), department.getName()));
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -62,7 +74,7 @@ public class QueueService {
         QueueTicket ticket = queueTicketRepository.findById(ticketId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Queue ticket", ticketId));
-        return QueueTicketResponse.from(ticket);
+        return toResponse(ticket);
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +87,7 @@ public class QueueService {
         }
         return PageResponse.from(queueTicketRepository
                 .findDepartmentQueue(departmentId, status, pageable)
-                .map(QueueTicketResponse::from));
+                .map(ticket -> QueueTicketResponse.from(ticket, null, null)));
     }
 
     @Transactional(readOnly = true)
@@ -89,7 +101,7 @@ public class QueueService {
         }
         return PageResponse.from(queueTicketRepository
                 .findPatientHistory(patientId, status, pageable)
-                .map(QueueTicketResponse::from));
+                .map(this::toResponse));
     }
 
     public QueueTicketResponse cancelTicket(Long ticketId) {
@@ -98,7 +110,13 @@ public class QueueService {
                         new ResourceNotFoundException("Queue ticket", ticketId));
         requireStatus(ticket, QueueStatus.WAITING);
         ticket.setStatus(QueueStatus.CANCELLED);
-        return QueueTicketResponse.from(queueTicketRepository.save(ticket));
+        QueueTicket saved = queueTicketRepository.save(ticket);
+        notificationService.create(
+                ticket.getPatient(),
+                NotificationKind.QUEUE,
+                "Queue ticket cancelled",
+                "Your queue ticket #%d was cancelled.".formatted(ticketId));
+        return toResponse(saved);
     }
 
     public QueueTicketResponse callNext(Long departmentId) {
@@ -110,14 +128,28 @@ public class QueueService {
                         "There are no waiting tickets in this department."));
         ticket.setStatus(QueueStatus.CALLED);
         ticket.setCalledAt(Instant.now());
-        return QueueTicketResponse.from(queueTicketRepository.save(ticket));
+        QueueTicket saved = queueTicketRepository.save(ticket);
+        notificationService.create(
+                ticket.getPatient(),
+                NotificationKind.QUEUE,
+                "Your turn is next",
+                "Please proceed for queue ticket #%d."
+                        .formatted(ticket.getId()));
+        return toResponse(saved);
     }
 
     public QueueTicketResponse skipTicket(Long departmentId, Long ticketId) {
         QueueTicket ticket = getDepartmentTicket(departmentId, ticketId);
         requireStatus(ticket, QueueStatus.CALLED);
         ticket.setStatus(QueueStatus.SKIPPED);
-        return QueueTicketResponse.from(queueTicketRepository.save(ticket));
+        QueueTicket saved = queueTicketRepository.save(ticket);
+        notificationService.create(
+                ticket.getPatient(),
+                NotificationKind.QUEUE,
+                "Queue ticket skipped",
+                "Your queue ticket #%d was marked as skipped."
+                        .formatted(ticket.getId()));
+        return toResponse(saved);
     }
 
     public QueueTicketResponse completeTicket(
@@ -127,7 +159,33 @@ public class QueueService {
         requireStatus(ticket, QueueStatus.CALLED);
         ticket.setStatus(QueueStatus.COMPLETED);
         ticket.setCompletedAt(Instant.now());
-        return QueueTicketResponse.from(queueTicketRepository.save(ticket));
+        QueueTicket saved = queueTicketRepository.save(ticket);
+        notificationService.create(
+                ticket.getPatient(),
+                NotificationKind.QUEUE,
+                "Queue visit completed",
+                "Your visit for queue ticket #%d is complete."
+                        .formatted(ticket.getId()));
+        return toResponse(saved);
+    }
+
+    private QueueTicketResponse toResponse(QueueTicket ticket) {
+        if (ticket.getStatus() == QueueStatus.CALLED) {
+            return QueueTicketResponse.from(ticket, 0L, 0L);
+        }
+        if (ticket.getStatus() != QueueStatus.WAITING) {
+            return QueueTicketResponse.from(ticket, null, null);
+        }
+
+        Long departmentId = ticket.getDepartment().getId();
+        long ahead = queueTicketRepository.countWaitingAhead(
+                departmentId, ticket.getCreatedAt(), ticket.getId());
+        Double averageWait = queueTicketRepository
+                .findAverageWaitMinutesByDepartmentId(departmentId);
+        long position = ahead + 1;
+        Long estimatedWait = averageWait == null
+                ? null : Math.round(averageWait * position);
+        return QueueTicketResponse.from(ticket, position, estimatedWait);
     }
 
     private Department getActiveDepartment(Long departmentId) {

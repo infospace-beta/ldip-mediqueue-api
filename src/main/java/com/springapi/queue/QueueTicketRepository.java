@@ -3,6 +3,7 @@ package com.springapi.queue;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.time.Instant;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -77,8 +78,37 @@ public interface QueueTicketRepository
             @Param("hospitalId") Long hospitalId,
             @Param("status") QueueStatus status);
 
+    @Query("""
+            select count(t) from QueueTicket t
+            where t.department.id = :departmentId
+              and t.status = com.springapi.queue.QueueStatus.WAITING
+              and (t.createdAt < :createdAt
+                   or (t.createdAt = :createdAt and t.id < :ticketId))
+            """)
+    long countWaitingAhead(
+            @Param("departmentId") Long departmentId,
+            @Param("createdAt") Instant createdAt,
+            @Param("ticketId") Long ticketId);
+
     @Query(value = """
-            select avg(extract(epoch from (called_at - created_at)) / 60.0)
+            select avg(extract(epoch from (t.called_at - t.created_at)) / 60.0)
+            from queue_tickets t
+            where t.department_id = :departmentId
+              and t.called_at is not null
+            """, nativeQuery = true)
+    Double findAverageWaitMinutesByDepartmentId(
+            @Param("departmentId") Long departmentId);
+
+    @Query("""
+            select d.hospital.id from QueueTicket t
+            join t.department d
+            where t.id = :queueTicketId
+            """)
+    Optional<Long> findDepartmentHospitalIdByQueueTicketId(
+            @Param("queueTicketId") Long queueTicketId);
+
+    @Query(value = """
+            select avg(extract(epoch from (t.called_at - t.created_at)) / 60.0)
             from queue_tickets t
             join departments d on d.id = t.department_id
             where d.hospital_id = :hospitalId

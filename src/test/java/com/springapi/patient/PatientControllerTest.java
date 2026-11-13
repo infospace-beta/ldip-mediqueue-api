@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.springapi.common.dto.PageResponse;
+import com.springapi.emergency.EmergencyService;
 import com.springapi.patient.dto.PatientResponse;
 import com.springapi.patient.dto.PatientUpdateRequest;
 import com.springapi.queue.QueueService;
@@ -31,14 +32,17 @@ class PatientControllerTest {
 
     private PatientService patientService;
     private QueueService queueService;
+    private EmergencyService emergencyService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         patientService = mock(PatientService.class);
         queueService = mock(QueueService.class);
+        emergencyService = mock(EmergencyService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(
-                        new PatientController(patientService, queueService))
+                        new PatientController(
+                                patientService, queueService, emergencyService))
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver())
                 .build();
@@ -101,6 +105,17 @@ class PatientControllerTest {
 
         verify(queueService).getPatientHistory(
                 eq(9L), eq((QueueStatus) null), any(Pageable.class));
+    }
+
+    @Test
+    void getsPatientEmergencyCases() throws Exception {
+        when(emergencyService.getForPatient(eq(9L), any(Pageable.class)))
+                .thenReturn(new PageResponse<>(List.of(), 0, 20, 0, 0, true));
+
+        mockMvc.perform(get("/api/v1/patients/9/emergency-cases"))
+                .andExpect(status().isOk());
+
+        verify(emergencyService).getForPatient(eq(9L), any(Pageable.class));
     }
 
     @Test

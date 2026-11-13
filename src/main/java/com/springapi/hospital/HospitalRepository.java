@@ -13,9 +13,13 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
 
     Optional<Hospital> findByRegistrationNumber(String registrationNumber);
 
+    Page<Hospital> findByStatus(
+            HospitalStatus status,
+            Pageable pageable);
+
     @Query("""
             select h from Hospital h
-            where (:search is null
+            where (:search = ''
                    or lower(h.name) like lower(concat('%', :search, '%'))
                    or lower(coalesce(h.county, '')) like lower(concat('%', :search, '%'))
                    or lower(coalesce(h.town, '')) like lower(concat('%', :search, '%')))

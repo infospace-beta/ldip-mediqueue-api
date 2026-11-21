@@ -47,27 +47,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String username = jwtService.extractUsername(jwt);
 
-            if (username != null
-                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (username != null) {
 
                 UserDetails userDetails =
                         userDetailsService.loadUserByUsername(username);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
 
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
+                    if (!userDetails.isEnabled()) {
+                        SecurityContextHolder.clearContext();
+                    } else if (SecurityContextHolder.getContext()
+                            .getAuthentication() == null) {
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
 
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
+                        authentication.setDetails(
+                                new WebAuthenticationDetailsSource()
+                                        .buildDetails(request)
+                        );
 
-                    SecurityContextHolder.getContext()
-                            .setAuthentication(authentication);
+                        SecurityContextHolder.getContext()
+                                .setAuthentication(authentication);
+                    }
                 }
             }
         } catch (io.jsonwebtoken.JwtException

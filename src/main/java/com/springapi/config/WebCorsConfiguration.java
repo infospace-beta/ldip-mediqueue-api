@@ -20,7 +20,7 @@ public class WebCorsConfiguration {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.stream(
                         allowedOrigins.split(","))
-                .map(String::trim)
+                .map(origin -> origin.trim())
                 .filter(origin -> !origin.isEmpty())
                 .toList());
         configuration.setAllowedMethods(

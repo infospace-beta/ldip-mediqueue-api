@@ -2,6 +2,7 @@ package com.springapi.user;
 
 import java.util.Optional;
 import java.util.Collection;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	Optional<User> findByUsername(String username);
 
 	Optional<User> findByEmail(String email);
+
+	Optional<User> findBySupabaseUserId(UUID supabaseUserId);
 
 	Optional<User> findByIdAndRole(Long id, UserRole role);
 

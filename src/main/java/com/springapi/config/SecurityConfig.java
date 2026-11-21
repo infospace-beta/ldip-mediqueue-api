@@ -82,10 +82,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
 
                 // Public authentication endpoints
-                .requestMatchers(
-                    HttpMethod.POST,
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/register"
+               .requestMatchers(
+               HttpMethod.POST,
+             "/api/v1/auth/login",
+             "/api/v1/auth/register",
+             "/api/v1/auth/supabase/exchange"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/patients").permitAll()
                 .requestMatchers(HttpMethod.POST, "/contact").permitAll()

@@ -1,6 +1,8 @@
 
 package com.springapi.user;
 
+import java.util.UUID;
+
 import com.springapi.common.entity.BaseEntity;
 import com.springapi.hospital.Hospital;
 
@@ -25,6 +27,9 @@ public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(name = "supabase_user_id", unique = true)
+    private UUID supabaseUserId;
 
     @Column(nullable = false, length = 100)
     private String fullName;
@@ -60,6 +65,14 @@ public class User extends BaseEntity {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public UUID getSupabaseUserId() {
+        return supabaseUserId;
+    }
+
+    public void setSupabaseUserId(UUID supabaseUserId) {
+        this.supabaseUserId = supabaseUserId;
     }
 
     public String getFullName() {

@@ -1,4 +1,4 @@
-﻿package com.springapi.hospital;
+package com.springapi.hospital;
 
 import java.util.Optional;
 

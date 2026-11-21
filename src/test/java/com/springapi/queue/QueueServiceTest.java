@@ -18,6 +18,7 @@ import com.springapi.common.exception.ConflictException;
 import com.springapi.department.Department;
 import com.springapi.department.DepartmentRepository;
 import com.springapi.department.DepartmentStatus;
+import com.springapi.hospital.Hospital;
 import com.springapi.notification.NotificationService;
 import com.springapi.user.User;
 import com.springapi.user.UserRepository;
@@ -149,10 +150,16 @@ class QueueServiceTest {
     }
 
     private Department activeDepartment() {
+        Hospital hospital = mock(Hospital.class);
+        when(hospital.getId()).thenReturn(2L);
+        when(hospital.getName()).thenReturn("Nakuru General Hospital");
+
         Department department = mock(Department.class);
         when(department.getId()).thenReturn(4L);
         when(department.getName()).thenReturn("Emergency");
         when(department.getStatus()).thenReturn(DepartmentStatus.ACTIVE);
+        when(department.getHospital()).thenReturn(hospital);
+
         return department;
     }
 

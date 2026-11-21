@@ -7,6 +7,8 @@ public record QueueTicketResponse(
         Long patientId,
         Long departmentId,
         String departmentName,
+        Long hospitalId,
+        String hospitalName,
         QueueStatus status,
         Instant joinedAt,
         Instant calledAt,
@@ -18,11 +20,17 @@ public record QueueTicketResponse(
             QueueTicket ticket,
             Long position,
             Long estimatedWaitMinutes) {
+
+        var department = ticket.getDepartment();
+        var hospital = department.getHospital();
+
         return new QueueTicketResponse(
                 ticket.getId(),
                 ticket.getPatient().getId(),
-                ticket.getDepartment().getId(),
-                ticket.getDepartment().getName(),
+                department.getId(),
+                department.getName(),
+                hospital.getId(),
+                hospital.getName(),
                 ticket.getStatus(),
                 ticket.getCreatedAt(),
                 ticket.getCalledAt(),

@@ -88,6 +88,7 @@ public class SecurityConfig {
                     "/api/v1/auth/register"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/patients").permitAll()
+                .requestMatchers(HttpMethod.POST, "/contact").permitAll()
 
                 // Public health endpoint
                 .requestMatchers(
@@ -112,3 +113,4 @@ public class SecurityConfig {
         return http.build();
     }
 }
+

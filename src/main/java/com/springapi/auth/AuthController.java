@@ -5,6 +5,7 @@ import com.springapi.auth.dto.AuthResponse;
 import com.springapi.auth.dto.CurrentUserResponse;
 import com.springapi.auth.dto.LoginRequest;
 import com.springapi.auth.dto.RegisterRequest;
+import com.springapi.auth.dto.SupabaseExchangeRequest;
 
 import jakarta.validation.Valid;
 
@@ -51,6 +52,17 @@ public class AuthController {
     @GetMapping("/me")
     public CurrentUserResponse getCurrentUser(
             @AuthenticationPrincipal UserDetails currentUser) {
+
         return authService.getCurrentUser(currentUser.getUsername());
+    }
+
+    @PostMapping("/supabase/exchange")
+    public ResponseEntity<AuthResponse> exchangeSupabaseToken(
+            @Valid @RequestBody SupabaseExchangeRequest request) {
+
+        AuthResponse response =
+                authService.exchangeSupabaseToken(request.accessToken());
+
+        return ResponseEntity.ok(response);
     }
 }

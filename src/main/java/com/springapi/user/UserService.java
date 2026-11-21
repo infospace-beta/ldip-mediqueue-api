@@ -55,6 +55,13 @@ public class UserService {
 		return UserResponse.from(getUserEntity(id));
 	}
 
+	public UserResponse findCurrentUser(String username) {
+		return userRepository.findByUsername(username)
+				.map(UserResponse::from)
+				.orElseThrow(() ->
+						new ResourceNotFoundException("Current user", "profile"));
+	}
+
 	public PageResponse<UserResponse> findStaff(
 			Long hospitalId,
 			UserRole role,

@@ -34,3 +34,7 @@ build/
 
 ### Local secrets ###
 .env
+
+# Local PostgreSQL database backups
+*.dump
+*.backup

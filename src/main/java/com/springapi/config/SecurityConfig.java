@@ -91,6 +91,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/patients").permitAll()
                 .requestMatchers(HttpMethod.POST, "/contact").permitAll()
 
+                // Public landing page
+                .requestMatchers("/", "/index.html").permitAll()
+
                 // Public health endpoint
                 .requestMatchers(
                     "/actuator/health",

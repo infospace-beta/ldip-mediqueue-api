@@ -1,4 +1,4 @@
-﻿name: MediQueue Backend CI
+name: MediQueue Backend CI
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 25
 
     env:
-      JWT_SECRET: ci-only-secret-for-automated-tests-2026
+      JWT_SECRET: p2A03gH7Dhw9PEG5O+JUdK/SpZkeVefK1vv6WAS3LVY=
       SUPABASE_JWKS_URL: https://example.invalid/auth/v1/.well-known/jwks.json
       SUPABASE_JWT_ISSUER: https://example.invalid/auth/v1
       SUPABASE_JWT_AUDIENCE: authenticated

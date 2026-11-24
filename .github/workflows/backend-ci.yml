@@ -1,0 +1,45 @@
+﻿name: MediQueue Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - mediqueue/database-design
+  pull_request:
+    branches:
+      - main
+      - master
+      - mediqueue/database-design
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      JWT_SECRET: ci-only-secret-for-automated-tests-2026
+      SUPABASE_JWKS_URL: https://example.invalid/auth/v1/.well-known/jwks.json
+      SUPABASE_JWT_ISSUER: https://example.invalid/auth/v1
+      SUPABASE_JWT_AUDIENCE: authenticated
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Enable Maven wrapper
+        run: chmod +x mvnw
+
+      - name: Run backend tests
+        run: ./mvnw -B -ntp test

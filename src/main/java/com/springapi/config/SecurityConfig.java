@@ -1,4 +1,3 @@
-
 package com.springapi.config;
 
 import com.springapi.security.JwtAuthenticationFilter;
@@ -15,10 +14,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -26,15 +27,18 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final MetricsAuthFilter metricsAuthFilter;
 
     public SecurityConfig(
             UserDetailsService userDetailsService,
             PasswordEncoder passwordEncoder,
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            MetricsAuthFilter metricsAuthFilter) {
 
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.metricsAuthFilter = metricsAuthFilter;
     }
 
     @Bean
@@ -56,6 +60,16 @@ public class SecurityConfig {
     }
 
     @Bean
+    public FilterRegistrationBean<MetricsAuthFilter> metricsFilterRegistration(
+            MetricsAuthFilter filter) {
+
+        FilterRegistrationBean<MetricsAuthFilter> registration =
+                new FilterRegistrationBean<>(filter);
+
+        registration.setEnabled(false);
+        return registration;
+    }
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
 
@@ -72,22 +86,28 @@ public class SecurityConfig {
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class
             )
+            .addFilterAfter(
+                metricsAuthFilter,
+                JwtAuthenticationFilter.class
+            )
+
             .exceptionHandling(exception -> exception
-    .authenticationEntryPoint(
-        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
-    )
-    .accessDeniedHandler(new AccessDeniedHandlerImpl())
-)
+                .authenticationEntryPoint(
+                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+                )
+                .accessDeniedHandler(new AccessDeniedHandlerImpl())
+            )
 
             .authorizeHttpRequests(auth -> auth
 
                 // Public authentication endpoints
-               .requestMatchers(
-               HttpMethod.POST,
-             "/api/v1/auth/login",
-             "/api/v1/auth/register",
-             "/api/v1/auth/supabase/exchange"
+                .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/register",
+                    "/api/v1/auth/supabase/exchange"
                 ).permitAll()
+
                 .requestMatchers(HttpMethod.POST, "/api/v1/patients").permitAll()
                 .requestMatchers(HttpMethod.POST, "/contact").permitAll()
 
@@ -99,6 +119,10 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/actuator/health/**"
                 ).permitAll()
+
+                // Prometheus requires dedicated metrics authentication
+                .requestMatchers("/actuator/prometheus")
+                    .hasRole("METRICS_SCRAPER")
 
                 // Public API documentation
                 .requestMatchers(
@@ -117,4 +141,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-
